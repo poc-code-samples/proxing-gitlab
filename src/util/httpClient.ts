@@ -22,6 +22,7 @@ export interface IFetchOptions {
 export interface IFetchResult {
   headers: any;
   data: any;
+  status: number | undefined;
 }
 
 export interface IClient {
@@ -85,7 +86,7 @@ class Client implements IClient {
             console.log(`>>> Data Received:`, result);
           }
 
-          resolve({headers: res.headers, data: result })
+          resolve({headers: res.headers, data: result, status: res.statusCode })
 
         });
 
