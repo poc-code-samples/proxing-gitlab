@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npx rimraf ./dist && npm run transpile",
-    "start": "HTTP_CLIENT_VERBOSE=1 node ./dist/src/index.js",
+    "build": "npx rimraf ./dist && npm run transpile && cp -r ./certs ./dist/",
+    "start": "node ./dist/src/index.js",
     "transpile": "npx tsc",
+    "dev": "npm run build && npm run start",
     "test": "npm run build && npx jasmine",
     "test:alone": "npx jasmine"
   },
@@ -14,7 +15,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/express": "^5.0.0",
+    "@types/http-proxy": "^1.17.15",
     "@types/jasmine": "^5.1.4",
     "@types/node": "^22.7.4",
     "jasmine": "^5.3.1",
@@ -22,6 +23,6 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
-    "express": "^4.21.0"
+    "http-proxy": "^1.18.1"
   }
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VANILLA_URI="https://gitlab.com/yrfonfria/sample-project.git"
-CUSTOM_URI="http://localhost:3000/yrfonfria/sample-project.git"
+CUSTOM_URI="https://localhost:3000/yrfonfria/sample-project.git"
 
 if [[ "$1" ]] && [[ "$1" == "vanilla" ]]
 then
@@ -19,6 +19,6 @@ DESTINATION="/tmp/`LC_ALL=C tr -dc A-Za-z0-9 < /dev/urandom | head -c 10`"
 
 echo "Cloning $URL into $DESTINATION"
 
-git clone $URL $DESTINATION
+git -c http.sslVerify=0 clone $URL $DESTINATION
 
 exit 0

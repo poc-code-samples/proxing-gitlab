@@ -5,47 +5,41 @@
   Copyright © 2024 Yosvel Reyes. All rights reserved
 */
 
-import express, { Express, Request, Response } from 'express';
-import httpClient, { IFetchOptions } from './util/httpClient';
+import https, { Server } from 'node:https';
+import httpProxy from 'http-proxy';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { IncomingMessage, ServerResponse } from 'node:http';
+import { authorize } from './utils/credential.resolver';
+import { Socket } from 'node:net';
+import { inspect } from 'node:util';
 
+const UPSTREAM_URL = 'https://gitlab.com';
 
-const base = 'https://gitlab.com';
-const username = process.env.GITLAB_USERNAME
-const pat = process.env.GITLAB_PAT;
+const proxy = httpProxy.createProxyServer({ secure: false });
 
-const AUTHORIZATION = /^authorization$/;
-
-const forward = async (req: Request, res: Response) => {
-  const options: IFetchOptions = {
-    method: req.method,
-    headers: new Map<string, string>()
-  }
-
-  for (const k in req.headers) {
-    if (!AUTHORIZATION.test(k.toLowerCase().trim())) {
-      options.headers.set(k, req.headers[k]);
-    }
-  }
-
-  options.headers.set('authorization', `Basic ${btoa(`${username}:${pat}`)}`);
-
-  const originalUrl = req.originalUrl;
-  const url = new URL(originalUrl, base);
-  const response = await httpClient.fetch(url, options);
-
-  for (const h in response.headers) {
-    res.set(h, response.headers[h]);
-  }
-
-  res.send(response.data);
-
-}
-
-const app: Express = express();
-
-app.all('*', (req: Request, res: Response) => {
-  forward(req, res);
+proxy.on('error', (e, _req: IncomingMessage, res: ServerResponse | Socket) => {
+  console.error('Error from proxy:', e);
+  (res as ServerResponse).statusCode = 500;
+  res.end();
 });
 
+proxy.on('proxyReq', (proxyReq, req, res, options) => {
+  proxyReq.setHeader('authorization', authorize().authorization );
+  console.log(req.headers);
+});
 
-app.listen(3000, () => console.log('Server listening on port 3000'));
+const key = readFileSync(join(__dirname, '../certs/key.pem'));
+const cert = readFileSync(join(__dirname, '../certs/cert.pem'));
+
+const server: Server = https.createServer(
+  {
+    key,
+    cert
+  }
+  , (req: IncomingMessage, res: ServerResponse) => {
+    console.log('Received request', req.url);
+    proxy.web(req, res, { target: UPSTREAM_URL });
+});
+
+server.listen(3000, () => console.info('Proxy listening on port 3000'));
